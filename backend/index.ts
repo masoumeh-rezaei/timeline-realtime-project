@@ -1,6 +1,7 @@
 import http from "http";
 import WebSocket, { WebSocketServer } from "ws";
 import Redis from "ioredis";
+console.log("🚀 Backend started");
 
 const PORT = process.env.PORT || 8080;
 const SYMBOLS = ["btcusdt", "ethusdt", "adausdt"];
@@ -45,7 +46,7 @@ function connectBinance() {
 
     binance.on("close", () => {
         console.log("⚠ Binance connection closed. Reconnecting...");
-        const timeout = Math.min(1000 * 2 ** reconnectAttempts, 30000); // max 30s
+        const timeout = Math.min(1000 * 2 ** reconnectAttempts, 30000);
         reconnectAttempts++;
         setTimeout(connectBinance, timeout + Math.random() * 1000); // jitter
     });
@@ -71,7 +72,12 @@ wss.on("connection", async (ws: WebSocket) => {
 
     // ارسال snapshot اولیه
     const snapshot = await redis.hgetall("prices");
-    ws.send(JSON.stringify({ type: "snapshot", data: snapshot }));
+    ws.send(
+        JSON.stringify({
+            type: "snapshot",
+            data: snapshot,
+        })
+    );
 
     ws.on("message", (msg: WebSocket.RawData) => {
         // مسیر اشتراک/لغو اشتراک
