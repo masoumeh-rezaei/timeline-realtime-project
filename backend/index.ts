@@ -1,7 +1,7 @@
 import http from "http";
 import WebSocket, { WebSocketServer } from "ws";
 import Redis from "ioredis";
-console.log("🚀 Backend started");
+
 
 const PORT = process.env.PORT || 8080;
 const SYMBOLS = ["btcusdt", "ethusdt", "adausdt"];

@@ -1,22 +1,13 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-
-type Trade = {
-    symbol: string;
-    price: string;
-    ts?: number;
-};
+import { Trade, TradePayload } from "@/type/types";
 
 type Snapshot = Record<string, Trade>;
 
-type TradePayload =
-    | { type: "trade"; symbol: string; price: string; ts?: number }
-    | { type: "snapshot"; data: Record<string, string> };
-
 export const useMarketSocket = (url = "ws://localhost:8080") => {
     const wsRef = useRef<WebSocket | null>(null);
-    const [messages, setMessages] = useState<Snapshot>({});
+    const [messages, setMessages] = useState<Record<string, { latest?: Trade; change?: number; history: Trade[] }>>({});
 
     useEffect(() => {
         let mounted = true;
@@ -31,31 +22,57 @@ export const useMarketSocket = (url = "ws://localhost:8080") => {
                 const payload: TradePayload = JSON.parse(event.data);
 
                 if (payload.type === "trade") {
-                    // TS safe, symbol و price مطمئن هستند
-                    const { symbol, price, ts } = payload;
-                    setMessages((prev) => ({
-                        ...prev,
-                        [symbol.toLowerCase()]: { symbol, price, ts },
-                    }));
+                    const { symbol, price, ts, volume } = payload;
+
+                    setMessages(prev => {
+                        const symbolKey = symbol.toLowerCase();
+                        const prevHistory = prev[symbolKey]?.history || [];
+                        const latestTrade: Trade = { symbol, price, ts, volume };
+                        const change = prev[symbolKey]?.latest
+                            ? ((parseFloat(price) - parseFloat(prev[symbolKey]!.latest!.price)) / parseFloat(prev[symbolKey]!.latest!.price)) * 100
+                            : undefined;
+
+                        return {
+                            ...prev,
+                            [symbolKey]: {
+                                latest: latestTrade,
+                                change,
+                                history: [...prevHistory.slice(-49), latestTrade], // نگهداری 50 داده آخر
+                            },
+                        };
+                    });
                 }
 
                 if (payload.type === "snapshot" && payload.data) {
                     const snapshot: Snapshot = Object.fromEntries(
                         Object.entries(payload.data).map(([symbol, val]) => {
                             const parsed = JSON.parse(val);
-                            return [symbol, { symbol, price: parsed.price, ts: parsed.ts }];
+                            return [symbol, { ...parsed, symbol }];
                         })
                     );
-                    setMessages(snapshot);
+                    setMessages(prev => {
+                        const merged: typeof prev = {};
+                        for (const [symbol, trade] of Object.entries(snapshot)) {
+                            merged[symbol.toLowerCase()] = {
+                                latest: trade,
+                                change: undefined,
+                                history: [trade],
+                            };
+                        }
+                        return merged;
+                    });
                 }
+            };
+
+            ws.onerror = (err) => {
+                console.error("⚠ WS error (network issue / blocked):", err);
+                ws.close();
             };
 
             ws.onclose = () => {
                 if (!mounted) return;
                 console.log("⚠ WS disconnected. Reconnecting in 2s...");
-                setTimeout(() => {
-                    if (mounted) connect();
-                }, 2000);
+                setTimeout(connect, 2000);
             };
         };
 
