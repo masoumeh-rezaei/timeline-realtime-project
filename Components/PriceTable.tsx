@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { Trade } from "@/hooks/useMarketSocket";
+import { Trade } from "@/type/types";
 
 type Props = {
     messages: Record<

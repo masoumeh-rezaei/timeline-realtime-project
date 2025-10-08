@@ -7,7 +7,9 @@ type Snapshot = Record<string, Trade>;
 
 export const useMarketSocket = (url = "ws://localhost:8080") => {
     const wsRef = useRef<WebSocket | null>(null);
-    const [messages, setMessages] = useState<Record<string, { latest?: Trade; change?: number; history: Trade[] }>>({});
+    const [messages, setMessages] = useState<
+        Record<string, { latest?: Trade; change?: number; history: Trade[] }>
+    >({});
 
     useEffect(() => {
         let mounted = true;

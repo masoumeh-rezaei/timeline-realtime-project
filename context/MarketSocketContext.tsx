@@ -1,8 +1,8 @@
 "use client";
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
-import { useMarketSocket, Trade } from "@/hooks/useMarketSocket";
-
+import { useMarketSocket } from "@/hooks/useMarketSocket";
+import { Trade } from '@/type/types'
 export type MarketMessage = {
     latest?: Trade;
     history: Trade[];

@@ -1,7 +1,7 @@
 'use client'
 
 import React from 'react'
-import { Trade } from '@/hooks/useMarketSocket'
+import { Trade } from '@/type/types'
 import { MiniLineChart } from './MiniLineChart'
 
 type Props = {
